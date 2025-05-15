@@ -1,0 +1,11 @@
+venv/
+__pycache__/
+*.pyc
+instance/
+.env
+*.db
+*.sqlite3
+.mypy_cache/
+.migrations/
+.idea/
+.DS_Store
