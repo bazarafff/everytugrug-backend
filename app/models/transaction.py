@@ -8,4 +8,3 @@ class Transaction(db.Model):
     txn_type = db.Column(db.String(10))  # 'in' or 'out'
     remarks = db.Column(db.String(255))
     bank = db.Column(db.String(50))
-
