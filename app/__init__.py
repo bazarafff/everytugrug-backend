@@ -4,7 +4,6 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
 from dotenv import load_dotenv
-from .config import Config
 
 # Load environment variables from .env file
 load_dotenv()
@@ -15,23 +14,25 @@ jwt = JWTManager()
 migrate = Migrate()
 
 def create_app():
-    app = Flask(__name__, instance_relative_config=True)
-    
-    app.config.from_object(Config)
+    app = Flask(__name__)
+
+    config_class = os.getenv("FLASK_ENV", "development")
+    if config_class == "production":
+        app.config.from_object("app.config.ProductionConfig")
+    else:
+        app.config.from_object("app.config.DevelopmentConfig")
 
     db.init_app(app)
     jwt.init_app(app)
     migrate.init_app(app, db)
 
-    # ✅ Import models so Alembic sees them
     from app import models
-
-    # Register Blueprints
     from app.routes.auth import auth_bp
     from app.routes.statements import stmt_bp
 
-    app.register_blueprint(auth_bp, url_prefix='/auth')
-    app.register_blueprint(stmt_bp, url_prefix='/statements')
+    app.register_blueprint(auth_bp, url_prefix="/auth")
+    app.register_blueprint(stmt_bp, url_prefix="/statements")
 
     return app
+
 

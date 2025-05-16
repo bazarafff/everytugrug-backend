@@ -1,7 +1,18 @@
 import os
+from dotenv import load_dotenv
 
-class Config:
-    SECRET_KEY = os.getenv("SECRET_KEY", "super-cedric-key")
-    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///instance/everytugrug.db")
+load_dotenv()
+
+class BaseConfig:
+    SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret")
+    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "fallback-jwt")
+    JWT_ACCESS_TOKEN_EXPIRES = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRES", 900))
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "jwt-cedric")
+
+class DevelopmentConfig(BaseConfig):
+    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///dev.db")
+    DEBUG = True
+
+class ProductionConfig(BaseConfig):
+    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
+    DEBUG = False

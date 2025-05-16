@@ -4,8 +4,12 @@ from datetime import datetime
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 import requests
+from sqlalchemy import extract, func
 from app import db
 from app.models.transaction import Transaction
+import csv
+from io import StringIO
+from flask import Response
 
 stmt_bp = Blueprint("statements", __name__)
 
@@ -179,3 +183,82 @@ def list_transactions():
             "bank": t.bank
         } for t in transactions
     ])
+
+@stmt_bp.route('/summary', methods=['GET'])
+@jwt_required()
+def get_summary():
+    user_id = get_jwt_identity()
+
+    summary = (
+        db.session.query(
+            extract('year', Transaction.txn_date).label('year'),
+            extract('month', Transaction.txn_date).label('month'),
+            func.sum(
+                func.case((Transaction.txn_type == 'in', Transaction.amount), else_=0)
+            ).label('income'),
+            func.sum(
+                func.case((Transaction.txn_type == 'out', Transaction.amount), else_=0)
+            ).label('expense')
+        )
+        .filter(Transaction.user_id == user_id)
+        .group_by('year', 'month')
+        .order_by('year', 'month')
+        .all()
+    )
+
+    result = []
+    for row in summary:
+        result.append({
+            "year": int(row.year),
+            "month": int(row.month),
+            "income": float(row.income),
+            "expense": float(row.expense),
+            "net": float(row.income - row.expense)
+        })
+
+    return jsonify(result)
+
+
+@stmt_bp.route('/export', methods=['GET'])
+@jwt_required()
+def export_csv():
+    user_id = get_jwt_identity()
+    from_date = request.args.get("from")
+    to_date = request.args.get("to")
+    txn_type = request.args.get("type")
+    bank = request.args.get("bank")
+
+    query = Transaction.query.filter_by(user_id=user_id)
+
+    if from_date:
+        query = query.filter(Transaction.txn_date >= from_date)
+    if to_date:
+        query = query.filter(Transaction.txn_date <= to_date)
+    if txn_type:
+        query = query.filter(Transaction.txn_type == txn_type)
+    if bank:
+        query = query.filter(Transaction.bank.ilike(bank))
+
+    transactions = query.order_by(Transaction.txn_date.asc()).all()
+
+    # CSV response
+    si = StringIO()
+    writer = csv.writer(si)
+    writer.writerow(["Date", "Amount", "Type", "Remarks", "Bank"])
+    for t in transactions:
+        writer.writerow([
+            t.txn_date.strftime("%Y-%m-%d"),
+            t.amount,
+            t.txn_type,
+            t.remarks,
+            t.bank
+        ])
+
+    output = si.getvalue()
+    return Response(
+        output,
+        mimetype="text/csv",
+        headers={
+            "Content-Disposition": "attachment;filename=transactions.csv"
+        }
+    )
