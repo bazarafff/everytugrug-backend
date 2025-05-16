@@ -3,8 +3,10 @@ services:
     name: everytugrug-backend
     env: python
     plan: free
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "gunicorn run:app"
+    buildCommand: |
+      pip install -r requirements.txt
+      flask db upgrade
+    startCommand: gunicorn run:app
     envVars:
       - key: FLASK_ENV
         value: production
@@ -18,8 +20,6 @@ services:
         fromDatabase:
           name: everytugrug-db
           property: connectionString
-
-
 
 databases:
   - name: everytugrug-db
