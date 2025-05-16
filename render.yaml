@@ -8,8 +8,6 @@ services:
       flask db upgrade
     startCommand: gunicorn run:app
     envVars:
-      - key: FLASK_ENV
-        value: production
       - key: SECRET_KEY
         value: Cedric123$
       - key: JWT_SECRET_KEY
@@ -20,6 +18,10 @@ services:
         fromDatabase:
           name: everytugrug
           property: connectionString
+      - key: FLASK_APP
+        value: run.py
+      - key: FLASK_ENV
+        value: production
 
 databases:
   - name: everytugrug
