@@ -5,6 +5,8 @@ from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
 from dotenv import load_dotenv
 
+from .config import Config
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -12,8 +14,6 @@ load_dotenv()
 db = SQLAlchemy()
 jwt = JWTManager()
 migrate = Migrate()
-
-from .config import Config
 
 def create_app():
     app = Flask(__name__)
@@ -31,8 +31,3 @@ def create_app():
     app.register_blueprint(stmt_bp, url_prefix="/statements")
 
     return app
-
-
-
-    
-
