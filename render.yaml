@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: everytugrug-backend
+    env: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn run:app"
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        value: Cedric123$
+      - key: JWT_SECRET_KEY
+        value: jwt-cedric
+      - key: JWT_ACCESS_TOKEN_EXPIRES
+        value: "900"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: everytugrug-db
+          property: connectionString
+
+
+
+databases:
+  - name: everytugrug-db
+    plan: free
