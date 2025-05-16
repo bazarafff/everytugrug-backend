@@ -6,7 +6,7 @@ services:
     container_name: everytugrug-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
+      POSTGRES_USER: everytugrug_user
       POSTGRES_PASSWORD: 1q2w
       POSTGRES_DB: everytugrug
     ports:
