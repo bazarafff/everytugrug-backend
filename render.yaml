@@ -20,9 +20,9 @@ services:
         value: "900"
       - key: DATABASE_URL
         fromDatabase:
-          name: everytugrug-db # ✅ Use the actual Render DB name
+          name: everytugrug-db
           property: connectionString
 
 databases:
-  - name: everytugrug-db # ✅ Must match the name above
+  - name: everytugrug-db
     plan: free

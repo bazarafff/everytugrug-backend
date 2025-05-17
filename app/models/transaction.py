@@ -11,4 +11,4 @@ class Transaction(db.Model):
     remarks = db.Column(db.String(255))
     bank = db.Column(db.String(50))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+    user = db.relationship("User", back_populates="transactions")
