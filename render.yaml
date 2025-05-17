@@ -18,6 +18,16 @@ services:
         value: jwt-cedric
       - key: JWT_ACCESS_TOKEN_EXPIRES
         value: "900"
+      - key: MAIL_SERVER
+        value: smtp.gmail.com
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USERNAME
+        value: bazarafff@gmail.com
+      - key: MAIL_PASSWORD
+        value: Reczann99!
+      - key: MAIL_DEFAULT_SENDER
+        value: bazarafff@gmail.com
       - key: DATABASE_URL
         fromDatabase:
           name: everytugrug-db
