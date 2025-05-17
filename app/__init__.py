@@ -41,5 +41,7 @@ def create_app():
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(stmt_bp, url_prefix="/statements")
 
-
+    @app.route("/")
+    def index():
+        return {"message": "EveryTugrug API is live 🎉"}, 200
     return app
