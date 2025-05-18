@@ -31,10 +31,12 @@ def register():
 @auth_bp.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
-    username = data.get("username")
+    identifier = data.get("username")  # can be username or email
     password = data.get("password")
 
-    user = User.query.filter_by(username=username).first()
+    user = User.query.filter(
+        (User.username == identifier) | (User.email == identifier)
+    ).first()
 
     if not user or not user.check_password(password):
         return jsonify({"error": "Invalid credentials"}), 401
@@ -42,11 +44,11 @@ def login():
     access_token = create_access_token(identity=str(user.id))
     refresh_token = create_refresh_token(identity=str(user.id))
 
-
     return jsonify({
         "access_token": access_token,
         "refresh_token": refresh_token
     }), 200
+
 
 
 @auth_bp.route('/me', methods=['POST'])
