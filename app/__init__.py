@@ -34,7 +34,11 @@ def create_app():
     from app.routes.budget import budget_bp
     from app.routes.summary import summary_bp
     from app.routes.alerts import alerts_bp
+    from app.routes.accounts import account_bp
+    from app.routes.goals import goal_bp
 
+    app.register_blueprint(goal_bp, url_prefix="/goals")
+    app.register_blueprint(account_bp, url_prefix="/accounts")
     app.register_blueprint(alerts_bp)
     app.register_blueprint(summary_bp)
     app.register_blueprint(budget_bp, url_prefix="/budget")

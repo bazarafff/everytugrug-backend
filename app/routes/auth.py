@@ -16,7 +16,7 @@ def register():
     password = data.get("password")
 
     if not all([username, email, password]):
-        return jsonify({"error": "Missing fields"}), 400
+        return jsonify({"error": "Missing fields"}),  
 
     if User.query.filter((User.username == username) | (User.email == email)).first():
         return jsonify({"error": "User already exists"}), 409

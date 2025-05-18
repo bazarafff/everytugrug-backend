@@ -30,4 +30,5 @@ class BudgetCategory(db.Model):
     spent = db.Column(db.Float, default=0.0)
 
     def remaining(self):
+        
         return self.total_limit - self.spent
