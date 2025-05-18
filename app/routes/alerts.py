@@ -6,7 +6,7 @@ from app.models.user import User
 from app.utils.notifications import send_alert_email
 alerts_bp = Blueprint("alerts", __name__)
 
-@alerts_bp.route("/alerts/overspending", methods=["GET"])
+@alerts_bp.route("/alerts/overspending", methods=["POST"])
 @jwt_required()
 def check_overspending():
     user_id = get_jwt_identity()

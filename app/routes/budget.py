@@ -25,7 +25,7 @@ def create_budget():
     db.session.commit()
     return jsonify({"message": "Budget created", "id": budget.id}), 201
 
-@budget_bp.route("/budget/<month>", methods=["GET"])
+@budget_bp.route("/budget/get/<month>", methods=["POST"])
 @jwt_required()
 def get_budget(month):
     user_id = get_jwt_identity()
@@ -42,7 +42,7 @@ def get_budget(month):
         ]
     })
 
-@budget_bp.route("/budget/<month>", methods=["PUT"])
+@budget_bp.route("/budget/update/<month>", methods=["POST"])
 @jwt_required()
 def update_budget(month):
     user_id = get_jwt_identity()
@@ -77,7 +77,7 @@ def add_budget_category(month):
     db.session.commit()
     return jsonify({"message": "Category added/updated"})
 
-@budget_bp.route("/budget/<month>/track", methods=["GET"])
+@budget_bp.route("/budget/<month>/track", methods=["POST"])
 @jwt_required()
 def track_budget(month):
     user_id = get_jwt_identity()

@@ -68,11 +68,10 @@ def upload_statement():
 def crawl_khan_statement():
     user_id = get_jwt_identity()
     data = request.get_json()
-
     username = data.get("username")
     encoded_password = data.get("password")
     account = data.get("account_no")
-    bank = data.get("bank", "KHAN")  # default Khan
+    bank = data.get("bank", "KHAN")  
 
     if not all([username, encoded_password, account]):
         return jsonify({"error": "Missing required fields"}), 400
@@ -112,7 +111,8 @@ def crawl_khan_statement():
                 amount=amount,
                 txn_type=txn_type,
                 remarks=remarks,
-                bank="KHAN"
+                bank = txn.get("bank", "KHAN")
+
             )
             db.session.add(new_txn)
             inserted += 1
@@ -124,7 +124,7 @@ def crawl_khan_statement():
 
 
 
-@stmt_bp.route('/transactions', methods=['GET'])
+@stmt_bp.route('/transactions/user', methods=['POST'])
 @jwt_required()
 def get_user_transactions():
     user_id = get_jwt_identity()
@@ -141,7 +141,7 @@ def get_user_transactions():
     ])
 
 
-@stmt_bp.route('/transactions', methods=['GET'])
+@stmt_bp.route('/transactions/all', methods=['POST'])
 @jwt_required()
 def list_transactions():
     user_id = get_jwt_identity()
@@ -184,7 +184,7 @@ def list_transactions():
         } for t in transactions
     ])
 
-@stmt_bp.route('/summary', methods=['GET'])
+@stmt_bp.route('/summary', methods=['POST'])
 @jwt_required()
 def get_summary():
     user_id = get_jwt_identity()
@@ -219,7 +219,7 @@ def get_summary():
     return jsonify(result)
 
 
-@stmt_bp.route('/export', methods=['GET'])
+@stmt_bp.route('/export', methods=['POST'])
 @jwt_required()
 def export_csv():
     user_id = get_jwt_identity()

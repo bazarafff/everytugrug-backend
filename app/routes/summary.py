@@ -8,7 +8,7 @@ from app import db
 
 summary_bp = Blueprint("summary", __name__)
 
-@summary_bp.route("/summary/monthly", methods=["GET"])
+@summary_bp.route("/summary/monthly", methods=["POST"])
 @jwt_required()
 def monthly_summary():
     user_id = get_jwt_identity()

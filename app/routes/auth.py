@@ -48,9 +48,10 @@ def login():
     }), 200
 
 
-@auth_bp.route('/me', methods=['GET'])
+@auth_bp.route('/me', methods=['POST'])
 @jwt_required()
 def me():
+    data = request.get_json()
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
 
