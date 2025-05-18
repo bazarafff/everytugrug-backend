@@ -28,7 +28,7 @@ def create_app():
     migrate.init_app(app, db)
     mail.init_app(app)
 
-    from app.models import user, budget, transaction, goal, account 
+    from app import models
     from app.routes.auth import auth_bp
     from app.routes.statements import stmt_bp
     from app.routes.budget import budget_bp
