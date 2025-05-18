@@ -37,7 +37,7 @@ def create_app():
 
     app.register_blueprint(alerts_bp)
     app.register_blueprint(summary_bp)
-    app.register_blueprint(budget_bp, url_prefix="/api")
+    app.register_blueprint(budget_bp, url_prefix="/budget")
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(stmt_bp, url_prefix="/statements")
 

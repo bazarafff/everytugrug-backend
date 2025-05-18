@@ -6,7 +6,7 @@ from datetime import datetime
 
 budget_bp = Blueprint("budget", __name__)
 
-@budget_bp.route("/budget", methods=["POST"])
+@budget_bp.route("/", methods=["POST"])
 @jwt_required()
 def create_budget():
     user_id = get_jwt_identity()
@@ -25,7 +25,7 @@ def create_budget():
     db.session.commit()
     return jsonify({"message": "Budget created", "id": budget.id}), 201
 
-@budget_bp.route("/budget/get/<month>", methods=["POST"])
+@budget_bp.route("/get/<month>", methods=["POST"])
 @jwt_required()
 def get_budget(month):
     user_id = get_jwt_identity()
@@ -42,7 +42,7 @@ def get_budget(month):
         ]
     })
 
-@budget_bp.route("/budget/update/<month>", methods=["POST"])
+@budget_bp.route("/update/<month>", methods=["POST"])
 @jwt_required()
 def update_budget(month):
     user_id = get_jwt_identity()
@@ -56,7 +56,7 @@ def update_budget(month):
     db.session.commit()
     return jsonify({"message": "Budget updated"})
 
-@budget_bp.route("/budget/<month>/category", methods=["POST"])
+@budget_bp.route("/<month>/category", methods=["POST"])
 @jwt_required()
 def add_budget_category(month):
     user_id = get_jwt_identity()
@@ -77,7 +77,7 @@ def add_budget_category(month):
     db.session.commit()
     return jsonify({"message": "Category added/updated"})
 
-@budget_bp.route("/budget/<month>/track", methods=["POST"])
+@budget_bp.route("/<month>/track", methods=["POST"])
 @jwt_required()
 def track_budget(month):
     user_id = get_jwt_identity()
