@@ -17,7 +17,7 @@ services:
       - key: JWT_SECRET_KEY
         value: jwt-cedric
       - key: JWT_ACCESS_TOKEN_EXPIRES
-        value: False
+        value: "False"
       - key: MAIL_SERVER
         value: smtp.gmail.com
       - key: MAIL_PORT
