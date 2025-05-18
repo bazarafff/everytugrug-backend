@@ -26,8 +26,8 @@ class BudgetCategory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     budget_id = db.Column(db.Integer, db.ForeignKey('core_budgets.id'), nullable=False)
     name = db.Column(db.String(50), nullable=False)
-    limit = db.Column(db.Float, nullable=False)
+    total_limit = db.Column(db.Float, nullable=False)
     spent = db.Column(db.Float, default=0.0)
 
     def remaining(self):
-        return self.limit - self.spent
+        return self.total_limit - self.spent
