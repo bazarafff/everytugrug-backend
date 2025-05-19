@@ -26,7 +26,10 @@ def register():
     db.session.add(user)
     db.session.commit()
 
-    return jsonify({"message": "User registered successfully"}), 201
+
+    access_token = create_access_token(identity=str(user.id))
+
+    return jsonify({ "access_token": access_token,}), 201
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
@@ -42,11 +45,9 @@ def login():
         return jsonify({"error": "Invalid credentials"}), 401
 
     access_token = create_access_token(identity=str(user.id))
-    refresh_token = create_refresh_token(identity=str(user.id))
 
     return jsonify({
         "access_token": access_token,
-        "refresh_token": refresh_token
     }), 200
 
 
