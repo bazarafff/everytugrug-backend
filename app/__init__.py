@@ -36,15 +36,18 @@ def create_app():
     from app.routes.alerts import alerts_bp
     from app.routes.accounts import account_bp
     from app.routes.goals import goal_bp
+    from app.routes.khan_crawler_step import khan_crawler_step_bp
+    from app.routes.statement_analysis import statement_analysis_bp
 
+    app.register_blueprint(statement_analysis_bp)
+    app.register_blueprint(khan_crawler_step_bp)
     app.register_blueprint(goal_bp, url_prefix="/goals")
     app.register_blueprint(account_bp, url_prefix="/accounts")
-    app.register_blueprint(alerts_bp)
+    app.register_blueprint(alerts_bp)   
     app.register_blueprint(summary_bp)
     app.register_blueprint(budget_bp, url_prefix="/budget")
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(stmt_bp, url_prefix="/statements")
-
     @app.route("/")
     def index():
         return {"message": "EveryTugrug API is live 🎉"}, 200
