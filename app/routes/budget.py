@@ -165,9 +165,9 @@ def check_budget(month):
 
 
 
-@budget_bp.route("/<month>/track", methods=["POST"])
+@budget_bp.route("/<month>/track/sync", methods=["POST"])
 @jwt_required()
-def track_budget(month):
+def track_budget_sync(month):
     user_id = get_jwt_identity()
     budget = Budget.query.filter_by(user_id=user_id, month=month).first()
     if not budget:
