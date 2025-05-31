@@ -12,3 +12,5 @@ class Transaction(db.Model):
     bank = db.Column(db.String(50))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     user = db.relationship("User", back_populates="transactions")
+
+
