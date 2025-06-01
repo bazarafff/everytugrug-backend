@@ -305,37 +305,38 @@ def import_statement():
 
         inserted = 0
         for _, row in df.iterrows():
+            if pd.isna(row['Гүйлгээний огноо']):
+                continue
+            
             txn_date = pd.to_datetime(row['Гүйлгээний огноо'], errors='coerce')
             if pd.isna(txn_date):
                 continue
             txn_date = txn_date.date()
 
-            debit_raw = str(row['Дебит гүйлгээ']) if pd.notna(row['Дебит гүйлгээ']) else '0'
-            credit_raw = str(row['Кредит гүйлгээ']) if pd.notna(row['Кредит гүйлгээ']) else '0'
+            debit_str = str(row['Дебит гүйлгээ']) if pd.notna(row['Дебит гүйлгээ']) else '0'
+            credit_str = str(row['Кредит гүйлгээ']) if pd.notna(row['Кредит гүйлгээ']) else '0'
 
-            # ',' болон '₮' тэмдэгтийг устгах, тоон утга хөрвүүлэх
             try:
-                debit = float(debit_raw.replace(',', '').replace('₮', '').strip())
+                debit = abs(float(debit_str.replace(',', '').replace('₮', '').replace('-', '').strip()))
             except:
                 debit = 0.0
             try:
-                credit = float(credit_raw.replace(',', '').replace('₮', '').strip())
+                credit = abs(float(credit_str.replace(',', '').replace('₮', '').replace('-', '').strip()))
             except:
                 credit = 0.0
 
-            # Гүйлгээний төрөл, утга тодорхойлох
-            if credit > 0:
-                amount = credit
-                txn_type = 'in'
-            elif debit > 0:
+            # Excel дээр зарим debit багана сөрөг утга байж магадгүй тул abs() ашиглаж эерэг болгоно.
+            if debit > 0:
                 amount = -debit
                 txn_type = 'out'
+            elif credit > 0:
+                amount = credit
+                txn_type = 'in'
             else:
-                continue  # 0 гүйлгээг алгасах
+                continue  # 0 утгатай мөрийг алгасах
 
             remarks = str(row['Гүйлгээний утга']).strip() if pd.notna(row['Гүйлгээний утга']) else ''
 
-            # Transaction үүсгэж DB-д нэмэх
             txn = Transaction(
                 user_id=user_id,
                 txn_date=txn_date,
@@ -346,6 +347,7 @@ def import_statement():
             )
             db.session.add(txn)
             inserted += 1
+
 
         db.session.commit()
     except Exception as e:
