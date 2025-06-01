@@ -279,37 +279,46 @@ def import_statement():
     if file.filename == '':
         return jsonify({'error': 'Файл сонгоогүй байна'}), 400
     
-    user_id = get_jwt_identity()  # Access Token-аас хэрэглэгчийн ID авах
+    user_id = get_jwt_identity()
     if not user_id:
         return jsonify({'error': 'Access token шаардлагатай'}), 400
 
-    # Файлыг түр хадгалах
     filename = secure_filename(file.filename)
     filepath = os.path.join('/tmp', filename)
     file.save(filepath)
-    
+
     try:
+        # Excel файлыг унших
         df = pd.read_excel(filepath, engine='openpyxl', header=7)
         df.columns = df.columns.str.strip()
         print(df.columns.tolist())
         df = df[['Гүйлгээний огноо', 'Дебит гүйлгээ', 'Кредит гүйлгээ', 'Гүйлгээний утга', 'Харьцсан данс']]
 
-        # 🗑️ Хэрэглэгчийн бүх хуучин гүйлгээг устгах
+        # 🗑️ Хэрэглэгчийн өмнөх гүйлгээнүүдийг устгах
         db.session.query(Transaction).filter(Transaction.user_id == user_id).delete(synchronize_session=False)
-        db.session.commit()  # Устгасныг баталгаажуулах
+        db.session.commit()
 
-        # 🆕 Шинээр оруулах
         inserted = 0
         for _, row in df.iterrows():
             if pd.isna(row['Гүйлгээний огноо']):
                 continue
+            
             txn_date = pd.to_datetime(row['Гүйлгээний огноо'], errors='coerce').date()
-            debit = float(str(row['Дебит гүйлгээ']).replace(',', '').replace('₮', '').strip()) if pd.notna(row['Дебит гүйлгээ']) else 0.0
-            credit = float(str(row['Кредит гүйлгээ']).replace(',', '').replace('₮', '').strip()) if pd.notna(row['Кредит гүйлгээ']) else 0.0
-            amount = credit - debit
-            if amount == 0:
+            debit_str = str(row['Дебит гүйлгээ']) if pd.notna(row['Дебит гүйлгээ']) else '0'
+            credit_str = str(row['Кредит гүйлгээ']) if pd.notna(row['Кредит гүйлгээ']) else '0'
+
+            debit = float(debit_str.replace(',', '').replace('₮', '').strip()) if debit_str.strip() else 0.0
+            credit = float(credit_str.replace(',', '').replace('₮', '').strip()) if credit_str.strip() else 0.0
+
+            if credit > 0:
+                amount = credit
+                txn_type = 'in'
+            elif debit > 0:
+                amount = -debit
+                txn_type = 'out'
+            else:
                 continue
-            txn_type = 'in' if amount > 0 else 'out'
+
             remarks = str(row['Гүйлгээний утга']) if pd.notna(row['Гүйлгээний утга']) else ''
             txn = Transaction(
                 user_id=user_id,
@@ -332,3 +341,32 @@ def import_statement():
         db.session.close()
 
     return jsonify({'message': f'✅ {inserted} гүйлгээг амжилттай импортлолоо.'}), 201
+
+
+@stmt_bp.route('/total_income_expense', methods=['POST'])
+@jwt_required()
+def all_income_expense():
+    user_id = get_jwt_identity()
+
+    # Query all transactions for this user
+    txns = Transaction.query.filter_by(user_id=user_id).all()
+
+    if not txns:
+        return jsonify({"error": "No transactions found."}), 404
+
+    # Initialize totals
+    total_income = 0.0
+    total_expense = 0.0
+
+    for txn in txns:
+        if txn.txn_type == 'in':
+            total_income += txn.amount
+        elif txn.txn_type == 'out':
+            total_expense += abs(txn.amount) 
+
+    return jsonify({
+        "total_income": total_income,
+        "total_expense": total_expense
+    }), 200
+
+

@@ -36,8 +36,9 @@ def expense_pie():
             "remarks": txn.remarks
         } for txn in transactions])
 
-        df["debit"] = df["amount"].apply(lambda x: abs(x) if x < 0 else 0)
-        df["description"] = df["remarks"].str.lower()
+        df["debit"] = df.apply(lambda row: abs(row["amount"]) if row["txn_type"] == "out" else 0, axis=1)
+        df["description"] = df["remarks"].str.lower().fillna("")  # Avoid None issues
+
 
         def categorize(text):
             for cat, keys in categories.items():
@@ -69,9 +70,9 @@ def forecast_plot():
         } for txn in transactions])
 
         df["txnDate"] = pd.to_datetime(df["txnDate"])
-        df["credit"] = df["amount"].apply(lambda x: x if x > 0 else 0)
-        df["debit"] = df["amount"].apply(lambda x: abs(x) if x < 0 else 0)
+        df["amount"] = df.apply(lambda row: row["amount"] if row["txn_type"] == "in" else -abs(row["amount"]), axis=1)
         df["endBalance"] = df["amount"].cumsum()
+
 
         df_daily = df.groupby(df["txnDate"].dt.date)[["credit", "debit", "endBalance"]].sum().reset_index()
         df_daily["txnDate"] = pd.to_datetime(df_daily["txnDate"])
@@ -114,8 +115,8 @@ def analyze_financial_data():
         } for txn in transactions])
 
         df["txnDate"] = pd.to_datetime(df["txnDate"])
-        df["credit"] = df["amount"].apply(lambda x: x if x > 0 else 0)
-        df["debit"] = df["amount"].apply(lambda x: abs(x) if x < 0 else 0)
+        df["credit"] = df.apply(lambda row: row["amount"] if row["txn_type"] == "in" else 0, axis=1)
+        df["debit"] = df.apply(lambda row: abs(row["amount"]) if row["txn_type"] == "out" else 0, axis=1)
         df["netAmount"] = df["credit"] - df["debit"]
         df["activity"] = df["credit"].abs() + df["debit"].abs()
         df["weekday"] = df["txnDate"].dt.weekday
@@ -159,12 +160,14 @@ def daily_income_expense_chart():
 
         df = pd.DataFrame([{
             "txnDate": txn.txn_date,
-            "amount": txn.amount
+            "amount": txn.amount,
+            "txn_type": txn.txn_type
         } for txn in transactions])
 
         df["txnDate"] = pd.to_datetime(df["txnDate"])
-        df["credit"] = df["amount"].apply(lambda x: x if x > 0 else 0)
-        df["debit"] = df["amount"].apply(lambda x: abs(x) if x < 0 else 0)
+        df["credit"] = df.apply(lambda row: row["amount"] if row["txn_type"] == "in" else 0, axis=1)
+        df["debit"] = df.apply(lambda row: abs(row["amount"]) if row["txn_type"] == "out" else 0, axis=1)
+
 
         df_daily = df.groupby(df["txnDate"].dt.date)[["credit", "debit"]].sum().reset_index()
         df_daily["txnDate"] = df_daily["txnDate"].astype(str)
