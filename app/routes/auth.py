@@ -4,8 +4,8 @@ from flask import Blueprint, current_app, request, jsonify
 from app import db
 from app.models.user import User
 from flask_jwt_extended import (
-    create_access_token, jwt_required, get_jwt_identity
-)
+     create_access_token, create_refresh_token, jwt_required,
+  get_jwt_identity, get_jwt, set_refresh_cookies)
 import re
 
 from werkzeug.utils import secure_filename
@@ -42,11 +42,11 @@ def register():
 @auth_bp.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
-    identifier = data.get("identifier")  # username, email, эсвэл phone_number
+    identifier = data.get("username")  # can be username or email
     password = data.get("password")
 
     user = User.query.filter(
-        (User.username == identifier) | (User.email == identifier) | (User.phone_number == identifier)
+        (User.username == identifier) | (User.email == identifier)
     ).first()
 
     if not user or not user.check_password(password):
