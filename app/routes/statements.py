@@ -10,6 +10,9 @@ from app.models.transaction import Transaction
 import csv
 from io import StringIO
 from flask import Response
+import pandas as pd
+import os
+from werkzeug.utils import secure_filename
 
 stmt_bp = Blueprint("statements", __name__)
 
@@ -262,3 +265,70 @@ def export_csv():
             "Content-Disposition": "attachment;filename=transactions.csv"
         }
     )
+
+
+
+
+@stmt_bp.route('/import', methods=['POST'])
+@jwt_required()
+def import_statement():
+    if 'file' not in request.files:
+        return jsonify({'error': 'Файл олдсонгүй'}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'Файл сонгоогүй байна'}), 400
+    
+    user_id = get_jwt_identity()  # Access Token-аас хэрэглэгчийн ID авах
+    if not user_id:
+        return jsonify({'error': 'Access token шаардлагатай'}), 400
+
+    # Файлыг түр хадгалах
+    filename = secure_filename(file.filename)
+    filepath = os.path.join('/tmp', filename)
+    file.save(filepath)
+    
+    try:
+        df = pd.read_excel(filepath, engine='openpyxl', header=7)
+        df.columns = df.columns.str.strip()
+        print(df.columns.tolist())
+        df = df[['Гүйлгээний огноо', 'Дебит гүйлгээ', 'Кредит гүйлгээ', 'Гүйлгээний утга', 'Харьцсан данс']]
+
+        # 🗑️ Хэрэглэгчийн бүх хуучин гүйлгээг устгах
+        db.session.query(Transaction).filter(Transaction.user_id == user_id).delete(synchronize_session=False)
+        db.session.commit()  # Устгасныг баталгаажуулах
+
+        # 🆕 Шинээр оруулах
+        inserted = 0
+        for _, row in df.iterrows():
+            if pd.isna(row['Гүйлгээний огноо']):
+                continue
+            txn_date = pd.to_datetime(row['Гүйлгээний огноо'], errors='coerce').date()
+            debit = float(str(row['Дебит гүйлгээ']).replace(',', '').replace('₮', '').strip()) if pd.notna(row['Дебит гүйлгээ']) else 0.0
+            credit = float(str(row['Кредит гүйлгээ']).replace(',', '').replace('₮', '').strip()) if pd.notna(row['Кредит гүйлгээ']) else 0.0
+            amount = credit - debit
+            if amount == 0:
+                continue
+            txn_type = 'in' if amount > 0 else 'out'
+            remarks = str(row['Гүйлгээний утга']) if pd.notna(row['Гүйлгээний утга']) else ''
+            txn = Transaction(
+                user_id=user_id,
+                txn_date=txn_date,
+                amount=amount,
+                txn_type=txn_type,
+                remarks=remarks,
+                bank="KhanBank"
+            )
+            db.session.add(txn)
+            inserted += 1
+
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Алдаа: {str(e)}'}), 500
+    finally:
+        if os.path.exists(filepath):
+            os.remove(filepath)
+        db.session.close()
+
+    return jsonify({'message': f'✅ {inserted} гүйлгээг амжилттай импортлолоо.'}), 201

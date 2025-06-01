@@ -12,7 +12,8 @@ class User(db.Model):
 
     # ✅ New fields
     phone_number = db.Column(db.String(20))
-    profile_picture = db.Column(db.String(255))  # Can store S3/Render CDN URLs
+    profile_picture = db.Column(db.Text)  # Илүү урт текст хадгалахад зориулсан
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # ✅ Relationships
