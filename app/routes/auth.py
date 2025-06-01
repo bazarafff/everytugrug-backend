@@ -1,3 +1,4 @@
+import base64
 import os
 from flask import Blueprint, current_app, request, jsonify
 from app import db
@@ -137,5 +138,5 @@ def upload_profile_pic():
 
     return jsonify({
         "message": "Зураг амжилттай хадгаллаа.",
-        "profile_picture": user.profile_picture  # Base64 string-ийг буцаана
+        "profile_picture": user.profile_picture  
     }), 200
