@@ -38,7 +38,11 @@ def create_app():
     from app.routes.goals import goal_bp
     from app.routes.khan_crawler_step import khan_crawler_step_bp
     from app.routes.statement_analysis import statement_analysis_bp
+    from app.routes.export import export_bp
+    from app.routes.user import user_bp
 
+    app.register_blueprint(export_bp, url_prefix="/export")
+    app.register_blueprint(user_bp, url_prefix="/user")
     app.register_blueprint(statement_analysis_bp)
     app.register_blueprint(khan_crawler_step_bp)
     app.register_blueprint(goal_bp, url_prefix="/goals")

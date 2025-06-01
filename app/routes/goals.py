@@ -1,8 +1,9 @@
-from datetime import datetime
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.goal import Goal
+from app.models.transaction import Transaction
+from datetime import datetime
 
 goal_bp = Blueprint("goals", __name__)
 
@@ -32,6 +33,15 @@ def create_goal():
 def list_goals():
     user_id = get_jwt_identity()
     goals = Goal.query.filter_by(user_id=user_id).all()
+
+    for goal in goals:
+        if goal.account_id:
+            total_amount = db.session.query(db.func.sum(Transaction.amount))\
+                .filter(Transaction.user_id == user_id, Transaction.account_id == goal.account_id)\
+                .scalar() or 0.0
+            goal.current_amount = total_amount
+    db.session.commit()
+
     return jsonify([g.to_dict() for g in goals])
 
 @goal_bp.route("/goals/update/<int:goal_id>", methods=["POST"])

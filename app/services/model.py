@@ -147,3 +147,32 @@ def analyze_financial_data():
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@jwt_required()
+def daily_income_expense_chart():
+    try:
+        user_id = get_jwt_identity()
+        transactions = Transaction.query.filter_by(user_id=user_id).all()
+        if not transactions:
+            return jsonify({"error": "Гүйлгээ олдсонгүй."}), 404
+
+        df = pd.DataFrame([{
+            "txnDate": txn.txn_date,
+            "amount": txn.amount
+        } for txn in transactions])
+
+        df["txnDate"] = pd.to_datetime(df["txnDate"])
+        df["credit"] = df["amount"].apply(lambda x: x if x > 0 else 0)
+        df["debit"] = df["amount"].apply(lambda x: abs(x) if x < 0 else 0)
+
+        df_daily = df.groupby(df["txnDate"].dt.date)[["credit", "debit"]].sum().reset_index()
+        df_daily["txnDate"] = df_daily["txnDate"].astype(str)
+
+        data = [
+            {"txnDate": row["txnDate"], "credit": float(row["credit"]), "debit": float(row["debit"])}
+            for _, row in df_daily.iterrows()
+        ]
+        return jsonify({"dailySummary": data})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
