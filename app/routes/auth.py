@@ -21,18 +21,17 @@ def register():
     username = data.get("username")
     email = data.get("email")
     password = data.get("password")
-    phone_number = data.get("phone_number")
 
-    if not all([username, email, password, phone_number]):
+    if not all([username, email, password]):
         return jsonify({"error": "Мэдээлэл дутуу байна."}), 400
 
     if not is_strong_password(password):
         return jsonify({"error": "Нууц үг сул байна. Том жижиг үсэг, тоо, тусгай тэмдэгт оролцсон, 8-аас дээш тэмдэгттэй байх шаардлагатай."}), 400
 
-    if User.query.filter((User.username == username) | (User.email == email) | (User.phone_number == phone_number)).first():
+    if User.query.filter((User.username == username) | (User.email == email)).first():
         return jsonify({"error": "Хэрэглэгчийн нэр, и-мэйл эсвэл утасны дугаар аль нэг нь бүртгэлтэй байна."}), 409
 
-    user = User(username=username, email=email, phone_number=phone_number)
+    user = User(username=username, email=email)
     user.set_password(password)
     db.session.add(user)
     db.session.commit()
