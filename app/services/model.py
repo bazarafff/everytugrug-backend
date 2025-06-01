@@ -33,18 +33,19 @@ def expense_pie():
         df = pd.DataFrame([{
             "txnDate": txn.txn_date,
             "amount": txn.amount,
-            "remarks": txn.remarks
+            "remarks": txn.remarks,
+            "txn_type": txn.txn_type  
         } for txn in transactions])
 
         df["debit"] = df.apply(lambda row: abs(row["amount"]) if row["txn_type"] == "out" else 0, axis=1)
         df["description"] = df["remarks"].str.lower().fillna("")  # Avoid None issues
-
 
         def categorize(text):
             for cat, keys in categories.items():
                 if any(k in text for k in keys):
                     return cat
             return "бусад"
+
         df["category"] = df["description"].apply(categorize)
 
         df_pie = df.groupby("category")["debit"].sum().reset_index()
@@ -55,6 +56,7 @@ def expense_pie():
         return jsonify({"categories": data})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @jwt_required()
 def forecast_plot():
