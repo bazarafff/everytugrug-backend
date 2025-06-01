@@ -288,28 +288,42 @@ def import_statement():
     file.save(filepath)
 
     try:
-        # Excel файлыг унших
+        # Excel унших
         df = pd.read_excel(filepath, engine='openpyxl', header=7)
         df.columns = df.columns.str.strip()
-        print(df.columns.tolist())
-        df = df[['Гүйлгээний огноо', 'Дебит гүйлгээ', 'Кредит гүйлгээ', 'Гүйлгээний утга', 'Харьцсан данс']]
+        print(f"📝 Columns: {df.columns.tolist()}")
 
-        # 🗑️ Хэрэглэгчийн өмнөх гүйлгээнүүдийг устгах
+        if not {'Гүйлгээний огноо', 'Дебит гүйлгээ', 'Кредит гүйлгээ', 'Гүйлгээний утга'}.issubset(df.columns):
+            return jsonify({'error': 'Файлын толгой (header) тохирохгүй байна.'}), 400
+        
+        # Хэрэгтэй багануудыг сонго
+        df = df[['Гүйлгээний огноо', 'Дебит гүйлгээ', 'Кредит гүйлгээ', 'Гүйлгээний утга']]
+
+        # 🗑️ Хуучин гүйлгээг устгах
         db.session.query(Transaction).filter(Transaction.user_id == user_id).delete(synchronize_session=False)
         db.session.commit()
 
         inserted = 0
         for _, row in df.iterrows():
-            if pd.isna(row['Гүйлгээний огноо']):
+            txn_date = pd.to_datetime(row['Гүйлгээний огноо'], errors='coerce')
+            if pd.isna(txn_date):
                 continue
-            
-            txn_date = pd.to_datetime(row['Гүйлгээний огноо'], errors='coerce').date()
-            debit_str = str(row['Дебит гүйлгээ']) if pd.notna(row['Дебит гүйлгээ']) else '0'
-            credit_str = str(row['Кредит гүйлгээ']) if pd.notna(row['Кредит гүйлгээ']) else '0'
+            txn_date = txn_date.date()
 
-            debit = float(debit_str.replace(',', '').replace('₮', '').strip()) if debit_str.strip() else 0.0
-            credit = float(credit_str.replace(',', '').replace('₮', '').strip()) if credit_str.strip() else 0.0
+            debit_raw = str(row['Дебит гүйлгээ']) if pd.notna(row['Дебит гүйлгээ']) else '0'
+            credit_raw = str(row['Кредит гүйлгээ']) if pd.notna(row['Кредит гүйлгээ']) else '0'
 
+            # ',' болон '₮' тэмдэгтийг устгах, тоон утга хөрвүүлэх
+            try:
+                debit = float(debit_raw.replace(',', '').replace('₮', '').strip())
+            except:
+                debit = 0.0
+            try:
+                credit = float(credit_raw.replace(',', '').replace('₮', '').strip())
+            except:
+                credit = 0.0
+
+            # Гүйлгээний төрөл, утга тодорхойлох
             if credit > 0:
                 amount = credit
                 txn_type = 'in'
@@ -317,9 +331,11 @@ def import_statement():
                 amount = -debit
                 txn_type = 'out'
             else:
-                continue
+                continue  # 0 гүйлгээг алгасах
 
-            remarks = str(row['Гүйлгээний утга']) if pd.notna(row['Гүйлгээний утга']) else ''
+            remarks = str(row['Гүйлгээний утга']).strip() if pd.notna(row['Гүйлгээний утга']) else ''
+
+            # Transaction үүсгэж DB-д нэмэх
             txn = Transaction(
                 user_id=user_id,
                 txn_date=txn_date,
@@ -341,6 +357,7 @@ def import_statement():
         db.session.close()
 
     return jsonify({'message': f'✅ {inserted} гүйлгээг амжилттай импортлолоо.'}), 201
+
 
 
 @stmt_bp.route('/total_income_expense', methods=['POST'])
