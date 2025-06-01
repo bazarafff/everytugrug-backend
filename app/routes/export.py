@@ -1,23 +1,55 @@
-from flask import Blueprint, jsonify, request, Response
+from flask import Blueprint, jsonify, request, Response, render_template_string
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.models.transaction import Transaction
-from app.models.budget import Budget, BudgetCategory
+from app.models.budget import Budget
 from app.models.goal import Goal
-import csv
-import io
+from weasyprint import HTML
 
 export_bp = Blueprint("export", __name__)
 
-def generate_csv(data, fieldnames):
-    si = io.StringIO()
-    writer = csv.DictWriter(si, fieldnames=fieldnames)
-    writer.writeheader()
-    writer.writerows(data)
-    return si.getvalue()
+# PDF генератор функц
+def generate_pdf(data, title, fieldnames):
+    html_template = """
+    <html>
+    <head>
+        <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; }
+        </style>
+    </head>
+    <body>
+        <h2>{{ title }}</h2>
+        <table>
+            <thead>
+                <tr>
+                    {% for field in fieldnames %}
+                    <th>{{ field }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in data %}
+                <tr>
+                    {% for field in fieldnames %}
+                    <td>{{ row[field] }}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </body>
+    </html>
+    """
+    rendered_html = render_template_string(html_template, title=title, data=data, fieldnames=fieldnames)
+    pdf_file = HTML(string=rendered_html).write_pdf()
+    return pdf_file
 
-@export_bp.route("/export/transactions", methods=["POST"])
+# Transactions PDF Export
+@export_bp.route("/export/transactions/pdf", methods=["POST"])
 @jwt_required()
-def export_transactions():
+def export_transactions_pdf():
     user_id = get_jwt_identity()
     transactions = Transaction.query.filter_by(user_id=user_id).all()
     data = [{
@@ -27,16 +59,17 @@ def export_transactions():
         "remarks": t.remarks,
         "bank": t.bank
     } for t in transactions]
-    csv_data = generate_csv(data, ["txn_date", "amount", "txn_type", "remarks", "bank"])
+    pdf_data = generate_pdf(data, "Transactions", ["txn_date", "amount", "txn_type", "remarks", "bank"])
     return Response(
-        csv_data,
-        mimetype="text/csv",
-        headers={"Content-Disposition": "attachment;filename=transactions.csv"}
+        pdf_data,
+        mimetype="application/pdf",
+        headers={"Content-Disposition": "attachment;filename=transactions.pdf"}
     )
 
-@export_bp.route("/export/budgets", methods=["POST"])
+# Budgets PDF Export
+@export_bp.route("/export/budgets/pdf", methods=["POST"])
 @jwt_required()
-def export_budgets():
+def export_budgets_pdf():
     user_id = get_jwt_identity()
     budgets = Budget.query.filter_by(user_id=user_id).all()
     data = [{
@@ -44,16 +77,17 @@ def export_budgets():
         "total_income": b.total_income,
         "total_expense": b.total_expense
     } for b in budgets]
-    csv_data = generate_csv(data, ["month", "total_income", "total_expense"])
+    pdf_data = generate_pdf(data, "Budgets", ["month", "total_income", "total_expense"])
     return Response(
-        csv_data,
-        mimetype="text/csv",
-        headers={"Content-Disposition": "attachment;filename=budgets.csv"}
+        pdf_data,
+        mimetype="application/pdf",
+        headers={"Content-Disposition": "attachment;filename=budgets.pdf"}
     )
 
-@export_bp.route("/export/goals", methods=["POST"])
+# Goals PDF Export
+@export_bp.route("/export/goals/pdf", methods=["POST"])
 @jwt_required()
-def export_goals():
+def export_goals_pdf():
     user_id = get_jwt_identity()
     goals = Goal.query.filter_by(user_id=user_id).all()
     data = [{
@@ -63,9 +97,9 @@ def export_goals():
         "due_date": g.due_date,
         "account_id": g.account_id
     } for g in goals]
-    csv_data = generate_csv(data, ["name", "target_amount", "current_amount", "due_date", "account_id"])
+    pdf_data = generate_pdf(data, "Goals", ["name", "target_amount", "current_amount", "due_date", "account_id"])
     return Response(
-        csv_data,
-        mimetype="text/csv",
-        headers={"Content-Disposition": "attachment;filename=goals.csv"}
+        pdf_data,
+        mimetype="application/pdf",
+        headers={"Content-Disposition": "attachment;filename=goals.pdf"}
     )
